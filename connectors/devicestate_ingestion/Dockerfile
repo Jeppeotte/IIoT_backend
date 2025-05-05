@@ -1,9 +1,9 @@
 FROM python:3.12-slim
 
-ADD timescaleDB_devicestate_connector.py .
+ADD postgresDB_devicestate_connector.py .
 
 ADD requirements.txt .
 
 RUN pip install -r requirements.txt
 
-ENTRYPOINT ["python", "timescaleDB_devicestate_connector.py"]
+ENTRYPOINT ["python", "postgresDB_devicestate_connector.py"]
