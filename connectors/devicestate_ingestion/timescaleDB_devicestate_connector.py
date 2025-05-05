@@ -84,20 +84,19 @@ class PostgresDB:
             logger.error(f" DB connection error: {e}")
 
     def insert_metrics(self,topic_parts, timestamp, state):
-        group_id = topic_parts[1]
         message_type = topic_parts[2]
-        edge_node_id = topic_parts[3]
+        node_id = topic_parts[3]
         device_id = topic_parts[4] if len(topic_parts) > 4 else None
         # Insert received metrics from MQTT broker
 
         try:
             with self.conn.cursor() as cursor:
                 query = f"""
-                    INSERT INTO {group_id}(time, edge_node_id, device_id, message_type, state)
+                    INSERT INTO device_states(time, node_id, device_id, message_type, state)
                     VALUES (to_timestamp(%s), %s, %s, %s, %s)
-                    ON CONFLICT (time, edge_node_id, message_type) DO NOTHING;
+                    ON CONFLICT (time, node_id, message_type) DO NOTHING;
                 """
-                cursor.execute(query, (timestamp, edge_node_id, device_id, message_type, state))
+                cursor.execute(query, (timestamp, node_id, device_id, message_type, state))
                 self.conn.commit()
         except psycopg2.OperationalError:
             logger.error("Lost connection to DB")
