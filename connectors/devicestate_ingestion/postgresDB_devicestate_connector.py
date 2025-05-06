@@ -114,7 +114,10 @@ class MQTTConnector:
             logger.info("Connected to MQTT broker")
             #Subscribe to all group topics and all difference devices within that group
             client.subscribe([("spBv1.0/+/DBIRTH/#",0),
-                              ("spBv1.0/+/DDEATH/#",0)])
+                              ("spBv1.0/+/DDEATH/#",0),
+                              ("spBv1.0/+/NBIRTH/#",0),
+                              ("spBv1.0/+/NDEATH/#",0),
+                              ("spBv1.0/+/STATE/#",0),])
 
 
     def on_message(self, client, userdata, msg):
@@ -126,7 +129,7 @@ class MQTTConnector:
             # If the timestamp does not exist, create one
             timestamp = payload.get("timestamp") or time.time()
             #Get the state of the device
-            state_map = {"ONLINE": 1, "OFFLINE": 0, "IDLE": 2}
+            state_map = {"ONLINE": 1, "OFFLINE": 0, "IDLE": 2, "RUNNING": 1}
             state = state_map.get(payload["status"], 3)
             #Push the state of the device to the db
             self.db.insert_metrics(topic_parts,timestamp,state)
