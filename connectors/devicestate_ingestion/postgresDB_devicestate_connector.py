@@ -83,7 +83,7 @@ class PostgresDB:
         except Exception as e:
             logger.error(f" DB connection error: {e}")
 
-    def insert_metrics(self,topic_parts, timestamp, state):
+    def insert_metrics(self,topic_parts, timestamp, state_key, state):
         message_type = topic_parts[2]
         node_id = topic_parts[3]
         device_id = topic_parts[4] if len(topic_parts) > 4 else None
@@ -92,11 +92,11 @@ class PostgresDB:
         try:
             with self.conn.cursor() as cursor:
                 query = f"""
-                    INSERT INTO device_states(time, node_id, device_id, message_type, state)
-                    VALUES (to_timestamp(%s), %s, %s, %s, %s)
+                    INSERT INTO device_states(time, node_id, device_id, message_type, state_key, state)
+                    VALUES (to_timestamp(%s), %s, %s, %s, %s. %s)
                     ON CONFLICT (time, node_id, message_type) DO NOTHING;
                 """
-                cursor.execute(query, (timestamp, node_id, device_id, message_type, state))
+                cursor.execute(query, (timestamp, node_id, device_id, message_type, state_key, state))
                 self.conn.commit()
         except psycopg2.OperationalError:
             logger.error("Lost connection to DB")
@@ -117,7 +117,7 @@ class MQTTConnector:
                               ("spBv1.0/+/DDEATH/#",0),
                               ("spBv1.0/+/NBIRTH/#",0),
                               ("spBv1.0/+/NDEATH/#",0),
-                              ("spBv1.0/+/STATE/#",0),])
+                              ("spBv1.0/+/STATE/#",0)])
 
 
     def on_message(self, client, userdata, msg):
@@ -129,10 +129,10 @@ class MQTTConnector:
             # If the timestamp does not exist, create one
             timestamp = payload.get("timestamp") or time.time()
             #Get the state of the device
-            state_map = {"ONLINE": 1, "OFFLINE": 0, "IDLE": 2, "RUNNING": 1}
-            state = state_map.get(payload["status"], 3)
+            if status := payload.get("status"):
+                (state_key, state), = status.items()
             #Push the state of the device to the db
-            self.db.insert_metrics(topic_parts,timestamp,state)
+            self.db.insert_metrics(topic_parts,timestamp,state_key,state)
 
         except Exception as e:
             logger.error(f"Error with processing the messages: {e}")
