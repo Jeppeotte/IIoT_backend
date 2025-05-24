@@ -93,7 +93,7 @@ class PostgresDB:
             with self.conn.cursor() as cursor:
                 query = f"""
                     INSERT INTO device_states(time, node_id, device_id, message_type, state_key, state)
-                    VALUES (to_timestamp(%s), %s, %s, %s, %s. %s)
+                    VALUES (to_timestamp(%s), %s, %s, %s, %s, %s)
                     ON CONFLICT (time, node_id, message_type) DO NOTHING;
                 """
                 cursor.execute(query, (timestamp, node_id, device_id, message_type, state_key, state))
@@ -127,7 +127,11 @@ class MQTTConnector:
             # Get the message from the broker
             payload = json.loads(msg.payload.decode())
             # If the timestamp does not exist, create one
-            timestamp = payload.get("timestamp") or time.time()
+            if timestamp := payload.get("timestamp"):
+                message_latency = (time.time() - timestamp) * 1000  # Convert to milliseconds
+                logger.info(f"The message latency was: {message_latency} ms")
+            else:
+                timestamp = time.time()
             #Get the state of the device
             if status := payload.get("status"):
                 (state_key, state), = status.items()
