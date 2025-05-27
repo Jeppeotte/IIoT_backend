@@ -84,15 +84,12 @@ class MQTTConnector:
         try:
             topic_parts = msg.topic.split('/')
             payload = json.loads(msg.payload.decode())
-
-            timestamp = payload.get("timestamp", time.time())
-            if "timestamp" in payload:
-                latency_ms = (time.time() - timestamp) * 1000
-                logger.debug(f"Msg latency: {latency_ms}ms")
+            # Payload timestamp
+            pl_timestamp = payload.get("timestamp", time.time())
 
             if "status" in payload:
                 state_key, state = next(iter(payload["status"].items()))
-                self.db.insert_metrics(topic_parts, timestamp, state_key, state)
+                self.db.insert_metrics(topic_parts, pl_timestamp, state_key, state)
 
         except Exception as e:
             logger.error(f"Message processing error: {e}")
