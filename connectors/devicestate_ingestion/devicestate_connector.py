@@ -23,7 +23,7 @@ class PostgresDB:
     def connect(self):
         try:
             self.conn = psycopg2.connect(
-                dbname="relationdata",
+                dbname="postgres",
                 user="postgres",
                 password="admin",
                 host="localhost",

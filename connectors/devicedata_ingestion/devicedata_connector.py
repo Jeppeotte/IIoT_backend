@@ -29,11 +29,11 @@ class TimescaleDB:
     def connect(self):
         try:
             self.conn = psycopg2.connect(
-                dbname="devicedata",
+                dbname="postgres",
                 user="postgres",
                 password="admin",
                 host="localhost",
-                port=5433
+                port=5432
             )
             logger.info("Successfully connected to TimescaleDB")
         except Exception as e:
